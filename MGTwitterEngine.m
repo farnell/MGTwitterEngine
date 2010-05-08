@@ -60,10 +60,10 @@
 #define MAX_LOCATION_LENGTH		30
 #define MAX_DESCRIPTION_LENGTH	160
 
-#define DEFAULT_CLIENT_NAME     @"MGTwitterEngine"
+#define DEFAULT_CLIENT_NAME     @"MeMap"
 #define DEFAULT_CLIENT_VERSION  @"1.0"
-#define DEFAULT_CLIENT_URL      @"http://mattgemmell.com/source"
-#define DEFAULT_CLIENT_TOKEN	@"mgtwitterengine"
+#define DEFAULT_CLIENT_URL      @"http://www.memap.com"
+#define DEFAULT_CLIENT_TOKEN	@"memap"
 
 #define URL_REQUEST_TIMEOUT     25.0 // Twitter usually fails quickly if it's going to fail at all.
 
@@ -456,23 +456,22 @@
         NSString *finalBody = @"";
 		if (body) {
 			finalBody = [finalBody stringByAppendingString:body];
-		}
-        if (_clientSourceToken) {
-            finalBody = [finalBody stringByAppendingString:[NSString stringWithFormat:@"%@source=%@", 
-                                                            (body) ? @"&" : @"?" , 
-                                                            _clientSourceToken]];
-        }
-        
-        if (finalBody) {
-            [theRequest setHTTPBody:[finalBody dataUsingEncoding:NSUTF8StringEncoding]];
-#if DEBUG
-			if (YES) {
-				NSLog(@"MGTwitterEngine: finalBody = %@", finalBody);
+			if (_clientSourceToken) {
+				finalBody = [finalBody stringByAppendingString:[NSString stringWithFormat:@"%@source=%@", 
+																(body) ? @"&" : @"?" , 
+																_clientSourceToken]];
 			}
+			if (finalBody) {
+				[theRequest setHTTPBody:[finalBody dataUsingEncoding:NSUTF8StringEncoding]];
+#if DEBUG
+				if (YES) {
+					NSLog(@"MGTwitterEngine: finalBody = %@", finalBody);
+				}
 #endif
-        }
+			}
+		}
+        
     }
-    
     
     // Create a connection using this request, with the default timeout and caching policy, 
     // and appropriate Twitter request and response types for parsing and error reporting.
@@ -716,9 +715,24 @@
             break;
     }
 #elif TOUCHJSON_AVAILABLE
+	/*
 	[MGTwitterTouchJSONParser parserWithJSON:jsonData delegate:self
 						connectionIdentifier:identifier requestType:requestType
 								responseType:responseType URL:URL deliveryOptions:_deliveryOptions];
+	 */
+    switch (responseType) {
+		case MGTwitterOAuthToken:;
+			OAToken *token = [[[OAToken alloc] initWithHTTPResponseBody:[[[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding] autorelease]] autorelease];
+			[self parsingSucceededForRequest:identifier ofResponseType:requestType
+						   withParsedObjects:[NSArray arrayWithObject:token]];
+			break;
+		default:
+			[MGTwitterTouchJSONParser parserWithJSON:jsonData delegate:self
+								connectionIdentifier:identifier requestType:requestType
+										responseType:responseType URL:URL deliveryOptions:_deliveryOptions];
+            break;
+    }
+	
 #endif
 	
 }
